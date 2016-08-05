@@ -296,23 +296,26 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             // Initialize audio BufferController
-            data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
+            var audioTracksData = this.manifestExt.getAudioTracksData(manifest, periodInfo.index, defaultAudioLang);
 
-            if (data === null) {
+            if (audioTracksData === null) {
                 this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
             } else {
-                audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
-                audioCodec = this.manifestExt.getCodec(data);
+                for (var i = 0; i < audioTracksData.length; i++) {
+                    data = audioTracksData[i];
+                    audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+                    audioCodec = this.manifestExt.getCodec(data);
 
-                if (audioCodec === null) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
-                } else {
-                    audioController = createBufferController.call(this, data, audioCodec);
+                    if (audioCodec === null) {
+                        this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
+                    } else {
+                        audioController = createBufferController.call(this, data, audioCodec);
 
-                    // Abort if audio track defined but failed to create audio controller
-                    if (audioController === null) {
-                        initializeMediaSourceFinished = true;
-                        return;
+                        // Proceed to the next track if current is defined but audio controller failed to initialize
+                        if (audioController === null) {
+                            continue;
+                        }
+                        break;
                     }
                 }
             }
